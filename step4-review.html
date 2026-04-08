@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MeowPay – Review & Send</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  .icon-svg{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.icon-svg svg{fill:currentColor}
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+  :root{
+    --mp-primary:#F0960F;--mp-primary-light:#FFEFD6;--mp-primary-dim:rgba(240,150,15,0.35);
+    --mp-secondary:#5563C1;--mp-secondary-container:#E0E2FF;
+    --mp-surface:#FDFBF8;--mp-surface-dim:#F5F2EE;--mp-surface-container:#EFECE8;
+    --mp-on-surface:#1C1B18;--mp-on-surface-variant:#4A4740;
+    --mp-outline:#7C7870;--mp-outline-variant:#CCC7BF;
+    --mp-disabled:#C8C5BE;--mp-disabled-text:#9E9A93;
+    --mp-success:#2E7D32;--mp-success-light:#E8F5E9;
+    --mp-shape-full:9999px;--mp-shape-lg:20px;--mp-shape-md:14px;--mp-shape-sm:10px;
+    --font-display:'Google Sans','Noto Sans',system-ui,sans-serif;
+    --font-body:'Noto Sans','Google Sans',system-ui,sans-serif;
+    --ease-emphasized:cubic-bezier(0.2,0,0,1);--ease-standard:cubic-bezier(0.2,0.0,0,1.0);
+  }
+
+  body{font-family:var(--font-body);background:#F0EDE9;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:24px}
+
+  .phone-frame{width:393px;height:852px;background:var(--mp-surface);border-radius:44px;overflow:hidden;position:relative;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.06),0 25px 60px -12px rgba(0,0,0,0.18),0 8px 24px -8px rgba(0,0,0,0.10),inset 0 0 0 1.5px rgba(255,255,255,0.5);
+    display:flex;flex-direction:column}
+
+  /* ── Status Bar ── */
+  .status-bar{height:54px;padding:14px 28px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .status-time{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-0.01em;color:var(--mp-on-surface)}
+  .status-icons{display:flex;align-items:center;gap:5px}.status-icons svg{height:12px;fill:var(--mp-on-surface)}
+
+  /* ── Nav ── */
+  .nav-bar{height:56px;padding:0 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative}
+  .nav-back{width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:none;background:transparent;cursor:pointer;transition:background .2s var(--ease-standard)}
+  .nav-back:hover{background:rgba(0,0,0,0.05)}
+  .nav-title{font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:-0.01em;color:var(--mp-on-surface);position:absolute;left:50%;transform:translateX(-50%)}
+  .nav-spacer{width:48px}
+
+  /* ── Steps ── */
+  .step-indicator{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0 0;flex-shrink:0}
+  .step-dot{width:28px;height:4px;border-radius:2px;background:var(--mp-outline-variant);transition:all .4s var(--ease-emphasized)}
+  .step-dot.active{background:var(--mp-primary)}.step-dot.done{background:var(--mp-primary-dim)}
+
+  /* ── Content ── */
+  .content{flex:1;overflow-y:auto;padding:0 24px;display:flex;flex-direction:column}
+  .content::-webkit-scrollbar{width:0}
+
+  /* ── Hero Header (ZaloPay / Wise style) ── */
+  .hero-header{
+    padding:28px 0 24px;
+    text-align:center;
+    position:relative;
+  }
+  .hero-label{
+    font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--mp-outline);margin-bottom:8px;
+  }
+  .hero-name{
+    font-family:var(--font-display);font-size:22px;font-weight:700;
+    color:var(--mp-on-surface);letter-spacing:-0.01em;margin-bottom:12px;
+  }
+  .hero-amount{
+    font-family:var(--font-display);font-size:44px;font-weight:700;
+    color:var(--mp-primary);letter-spacing:-0.03em;line-height:1;
+  }
+  .hero-amount .hero-currency{
+    font-size:22px;font-weight:600;vertical-align:super;margin-left:2px;
+    color:var(--mp-primary-dim);
+  }
+
+  /* ── Divider ── */
+  .divider{height:1px;background:var(--mp-outline-variant);margin:0;opacity:0.5}
+
+  /* ── Info Section (Techcombank natural flow) ── */
+  .info-section{padding:20px 0 0}
+
+  .info-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 0;
+  }
+  .info-row + .info-row{border-top:1px solid rgba(204,199,191,0.3)}
+
+  .info-label{
+    font-size:14px;color:var(--mp-outline);font-weight:500;
+    display:flex;align-items:center;gap:8px;
+  }
+  .info-value{
+    font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--mp-on-surface);
+    text-align:right;
+  }
+
+  /* ── Split Method Chip ── */
+  .method-chip{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:5px 12px;background:var(--mp-secondary-container);
+    border-radius:var(--mp-shape-full);
+    font-family:var(--font-display);font-size:12px;font-weight:600;
+    color:var(--mp-secondary);
+  }
+
+  /* ── Members Card ── */
+  .members-card{
+    background:var(--mp-surface-dim);border:1px solid var(--mp-outline-variant);
+    border-radius:var(--mp-shape-md);padding:4px 0;margin-top:16px;
+  }
+  .member-row{
+    display:flex;align-items:center;gap:12px;padding:12px 16px;
+  }
+  .member-row + .member-row{border-top:1px solid rgba(204,199,191,0.25)}
+  .member-avatar{
+    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:13px;color:#fff;flex-shrink:0;
+  }
+  .member-info{flex:1;min-width:0}
+  .member-name{font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--mp-on-surface)}
+  .member-role{font-size:11.5px;margin-top:1px;font-weight:500}
+  .member-role.owed{color:var(--mp-primary)}
+  .member-role.pays{color:var(--mp-outline)}
+  .member-amount{
+    font-family:var(--font-display);font-size:15px;font-weight:600;
+    color:var(--mp-on-surface);flex-shrink:0;
+  }
+
+  /* ── Note Section ── */
+  .note-section{
+    margin-top:20px;padding:16px;
+    background:var(--mp-surface-dim);
+    border:1.5px dashed var(--mp-outline-variant);
+    border-radius:var(--mp-shape-md);
+    cursor:pointer;
+    transition:all .2s var(--ease-standard);
+  }
+  .note-section:hover{border-color:var(--mp-primary);background:var(--mp-primary-light)}
+  .note-section.has-content{
+    border-style:solid;border-color:var(--mp-outline-variant);
+    cursor:default;
+  }
+  .note-section.has-content:hover{border-color:var(--mp-outline-variant);background:var(--mp-surface-dim)}
+
+  .note-header{
+    display:flex;align-items:center;gap:8px;margin-bottom:0;
+  }
+  .note-header-label{
+    font-family:var(--font-display);font-size:14px;font-weight:500;
+    color:var(--mp-outline);flex:1;
+  }
+  .note-section:hover .note-header-label{color:var(--mp-primary)}
+  .note-section.has-content .note-header-label{color:var(--mp-on-surface-variant)}
+
+  .note-input-area{
+    display:none;margin-top:12px;
+  }
+  .note-section.has-content .note-input-area,
+  .note-section.editing .note-input-area{display:block}
+
+  .note-textarea{
+    width:100%;border:none;outline:none;background:transparent;resize:none;
+    font-family:var(--font-body);font-size:14px;color:var(--mp-on-surface);
+    caret-color:var(--mp-primary);min-height:40px;
+  }
+  .note-textarea::placeholder{color:var(--mp-disabled-text)}
+
+  /* Sticker trigger row */
+  .sticker-trigger-row{
+    display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;
+    border-top:1px solid rgba(204,199,191,0.3);
+  }
+  .sticker-trigger-btn{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 14px;border-radius:var(--mp-shape-full);
+    border:1.5px solid var(--mp-outline-variant);background:var(--mp-surface);
+    cursor:pointer;transition:all .2s var(--ease-standard);
+    font-family:var(--font-display);font-size:13px;font-weight:500;color:var(--mp-outline);
+  }
+  .sticker-trigger-btn:hover{border-color:var(--mp-primary);color:var(--mp-primary)}
+  .sticker-trigger-btn.has-sticker{border-color:var(--mp-primary);background:var(--mp-primary-light);color:var(--mp-on-surface)}
+
+  .selected-sticker-preview{
+    width:32px;height:32px;border-radius:50%;
+    display:none;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .selected-sticker-preview.visible{display:flex}
+  .selected-sticker-preview svg{width:32px;height:32px}
+
+  /* ── Sticker Bottom Sheet ── */
+  .sticker-overlay{
+    position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:20;
+    opacity:0;pointer-events:none;transition:opacity .3s var(--ease-standard);border-radius:44px;
+  }
+  .sticker-overlay.open{opacity:1;pointer-events:auto}
+  .sticker-sheet{
+    position:absolute;bottom:0;left:0;right:0;z-index:21;
+    background:var(--mp-surface);border-radius:24px 24px 44px 44px;
+    padding:16px 24px 44px;
+    transform:translateY(100%);transition:transform .4s var(--ease-emphasized);
+  }
+  .sticker-sheet.open{transform:translateY(0)}
+  .sticker-sheet-handle{width:40px;height:4px;background:var(--mp-outline-variant);border-radius:2px;margin:0 auto 16px}
+  .sticker-sheet-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .sticker-sheet-title{font-family:var(--font-display);font-size:17px;font-weight:600;color:var(--mp-on-surface)}
+  .sticker-sheet-close{width:36px;height:36px;border-radius:50%;border:none;background:var(--mp-surface-container);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s ease}
+  .sticker-sheet-close:hover{background:var(--mp-outline-variant)}
+  .sticker-sheet-desc{font-size:13px;color:var(--mp-outline);margin-bottom:20px;line-height:1.4}
+
+  /* Sticker Preview area */
+  .sticker-preview-area{
+    display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:20px;
+    background:var(--mp-surface-dim);border-radius:var(--mp-shape-md);
+    min-height:72px;
+  }
+  .sticker-preview-cat{width:52px;height:52px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sticker-preview-cat svg{width:52px;height:52px}
+  .sticker-preview-text{
+    flex:1;font-family:var(--font-display);font-size:14px;font-weight:500;color:var(--mp-on-surface-variant);
+    background:var(--mp-surface);padding:8px 14px;border-radius:var(--mp-shape-full);
+  }
+  .sticker-preview-text.placeholder{color:var(--mp-disabled-text)}
+
+  /* Sticker Grid */
+  .sticker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .sticker-grid-item{
+    display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;
+    padding:10px 4px;border-radius:var(--mp-shape-md);border:2px solid transparent;
+    transition:all .2s var(--ease-standard);
+  }
+  .sticker-grid-item:hover{background:var(--mp-surface-dim)}
+  .sticker-grid-item.selected{border-color:var(--mp-primary);background:var(--mp-primary-light)}
+  .sticker-grid-item svg{width:48px;height:48px}
+  .sticker-grid-label{font-size:11px;font-weight:600;color:var(--mp-outline);text-align:center}
+  .sticker-grid-item.selected .sticker-grid-label{color:var(--mp-primary)}
+
+  /* Sheet Save btn */
+  .sticker-save-btn{
+    width:100%;height:48px;border:none;border-radius:var(--mp-shape-md);
+    background:var(--mp-secondary);color:#fff;
+    font-family:var(--font-display);font-size:15px;font-weight:600;
+    cursor:pointer;margin-top:20px;transition:all .2s var(--ease-standard);
+  }
+  .sticker-save-btn:hover{box-shadow:0 2px 12px rgba(85,99,193,0.3)}
+
+  /* ── Bottom ── */
+  .bottom-spacer{height:20px;flex-shrink:0}
+  .bottom-section{flex-shrink:0;padding:0 24px;display:flex;flex-direction:column}
+
+  .cta-btn{
+    width:100%;height:56px;border:none;border-radius:var(--mp-shape-md);
+    font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:0.01em;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:all .35s var(--ease-emphasized);position:relative;overflow:hidden;
+    background:var(--mp-primary);color:#fff;
+    box-shadow:0 2px 12px rgba(240,150,15,0.30);
+  }
+  .cta-btn:hover{box-shadow:0 4px 20px rgba(240,150,15,0.40);transform:translateY(-1px)}
+  .cta-btn:active{transform:scale(0.985);box-shadow:0 1px 8px rgba(240,150,15,0.25)}
+
+  .cta-sub{
+    text-align:center;font-size:11.5px;color:var(--mp-outline);
+    padding:8px 0 0;display:flex;align-items:center;justify-content:center;gap:4px;
+  }
+
+  .home-indicator{height:34px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;flex-shrink:0}
+  .home-indicator-bar{width:134px;height:5px;background:var(--mp-on-surface);border-radius:3px;opacity:0.18}
+
+  /* ── Animations ── */
+  @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+  .anim-slide-up{animation:slideUp .5s var(--ease-emphasized) both}
+  .anim-fade{animation:fadeIn .4s var(--ease-standard) both}
+  .anim-scale{animation:scaleIn .4s var(--ease-emphasized) both}
+  .delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}.delay-3{animation-delay:.24s}.delay-4{animation-delay:.36s}.delay-5{animation-delay:.44s}
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- Status Bar -->
+  <div class="status-bar anim-fade">
+    <span class="status-time">16:41</span>
+    <div class="status-icons">
+      <svg viewBox="0 0 18 12" width="18"><path d="M1 4.2C3.7 1.5 7.1 0 10.7 0s7 1.5 9.7 4.2l-1.4 1.4C16.7 3.3 13.8 2 10.7 2S4.7 3.3 2.4 5.6L1 4.2z" transform="scale(0.85)"/><path d="M5 8.2c1.6-1.6 3.6-2.4 5.7-2.4s4.1.8 5.7 2.4l-1.4 1.4c-1.2-1.2-2.7-1.8-4.3-1.8s-3.1.6-4.3 1.8L5 8.2z" transform="scale(0.85)"/><circle cx="9.1" cy="11" r="1.5"/></svg>
+      <svg viewBox="0 0 24 12" width="26" height="13"><rect x="0" y="1" width="22" height="11" rx="2.5" ry="2.5" stroke="currentColor" stroke-width="1" fill="none" opacity="0.35"/><rect x="22.5" y="4.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.35"/><rect x="1.5" y="2.5" width="16" height="8" rx="1.5" fill="#3BCC5E"/></svg>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar anim-slide-up delay-1">
+    <button class="nav-back" aria-label="Back">
+      <span class="icon-svg" style="width:24px;height:24px;color:var(--mp-on-surface)"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M400-80 0-480l400-400 56 57-343 343 343 343-56 57Z"/></svg></span>
+    </button>
+    <span class="nav-title">Xác nhận</span>
+    <div class="nav-spacer"></div>
+  </div>
+
+  <!-- Steps -->
+  <div class="step-indicator anim-fade delay-2">
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="content">
+
+    <!-- Hero Header -->
+    <div class="hero-header anim-scale delay-2">
+      <div class="hero-label">Tổng bill</div>
+      <div class="hero-name">Ăn tối nhóm</div>
+      <div class="hero-amount">185.000<span class="hero-currency">đ</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Info Section -->
+    <div class="info-section anim-fade delay-3">
+
+      <!-- Paid by -->
+      <div class="info-row">
+        <span class="info-label">
+          <span class="icon-svg" style="width:18px;height:18px;color:var(--mp-outline)"><svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/></svg></span>
+          Người chi
+        </span>
+        <span class="info-value">You</span>
+      </div>
+
+      <!-- Split method -->
+      <div class="info-row">
+        <span class="info-label">
+          <span class="icon-svg" style="width:18px;height:18px;color:var(--mp-outline)"><svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18"><path d="M440-183v-274L200-596v274l240 139Zm80 0 240-139v-274L520-457v274Zm-40-343 237-137-237-137-237 137 237 137ZM160-252q-19-11-29.5-29T120-318v-324q0-19 10.5-37t29.5-29l280-161q19-11 40-11t40 11l280 161q19 11 29.5 29t10.5 37v324q0 19-10.5 37T800-252L520-91q-19 11-40 11t-40-11L160-252Z"/></svg></span>
+          Phương thức chia
+        </span>
+        <span class="method-chip">
+          <span class="icon-svg" style="width:14px;height:14px"><svg xmlns="http://www.w3.org/2000/svg" height="14" viewBox="0 -960 960 960" width="14"><path d="M560-440q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM280-320q-33 0-56.5-23.5T200-400v-320q0-33 23.5-56.5T280-800h560q33 0 56.5 23.5T920-720v320q0 33-23.5 56.5T840-320H280Z"/></svg></span>
+          Chia đều (Amount)
+        </span>
+      </div>
+
+    </div>
+
+    <!-- Members list -->
+    <div class="members-card anim-slide-up delay-4">
+      <div class="member-row">
+        <div class="member-avatar" style="background:#F0960F">Y</div>
+        <div class="member-info">
+          <div class="member-name">You</div>
+          <div class="member-role pays">Paid share</div>
+        </div>
+        <div class="member-amount">61.668đ</div>
+      </div>
+      <div class="member-row">
+        <div class="member-avatar" style="background:#E8A04C">MA</div>
+        <div class="member-info">
+          <div class="member-name">Minh Anh</div>
+          <div class="member-role owed">You're owed</div>
+        </div>
+        <div class="member-amount">61.666đ</div>
+      </div>
+      <div class="member-row">
+        <div class="member-avatar" style="background:#5563C1">DN</div>
+        <div class="member-info">
+          <div class="member-name">Dustin Nguyen</div>
+          <div class="member-role owed">You're owed</div>
+        </div>
+        <div class="member-amount">61.666đ</div>
+      </div>
+    </div>
+
+    <!-- Note + Sticker Section -->
+    <div class="note-section anim-fade delay-5" id="noteSection" onclick="openNote()">
+      <div class="note-header">
+        <span class="icon-svg" style="width:18px;height:18px;color:var(--mp-outline)"><svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18"><path d="M200-200h357l103-103v-257H200v360Zm0 80q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v380L660-200H200Zm80-280h400v-80H280v80Zm0-160h400v-80H280v80ZM200-200v-560 560Z"/></svg></span>
+        <span class="note-header-label" id="noteLabel">Thêm lời nhắn & sticker</span>
+        <span class="icon-svg" style="width:18px;height:18px;color:var(--mp-outline-variant)"><svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg></span>
+      </div>
+      <div class="note-input-area">
+        <textarea class="note-textarea" id="noteTextarea" placeholder="VD: Tiền ăn tối thứ 7 nha mọi người..." rows="2" onclick="event.stopPropagation()"></textarea>
+        <div class="sticker-trigger-row">
+          <div class="selected-sticker-preview" id="selectedStickerPreview"></div>
+          <button class="sticker-trigger-btn" id="stickerTrigger" onclick="event.stopPropagation();openStickerSheet()">
+            <span class="icon-svg" style="width:16px;height:16px"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M620-520q25 0 42.5-17.5T680-580q0-25-17.5-42.5T620-640q-25 0-42.5 17.5T560-580q0 25 17.5 42.5T620-520Zm-280 0q25 0 42.5-17.5T400-580q0-25-17.5-42.5T340-640q-25 0-42.5 17.5T280-580q0 25 17.5 42.5T340-520Zm140 260q68 0 123.5-38.5T684-400H276q25 63 80.5 101.5T480-260Zm0 180q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg></span>
+            <span id="stickerTriggerLabel">Chọn sticker</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-spacer"></div>
+  </div>
+
+  <!-- Bottom CTA -->
+  <div class="bottom-section">
+    <button class="cta-btn anim-slide-up delay-4" id="ctaBtn" onclick="onSplit()">
+      <span class="icon-svg" style="width:22px;height:22px"><svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 -960 960 960" width="22" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm280-80h160q17 0 28.5-11.5T640-360q0-17-11.5-28.5T600-400H440q-17 0-28.5 11.5T400-360q0 17 11.5 28.5T440-320ZM160-240v-480 480Z"/></svg></span>
+      Split bill
+    </button>
+    <div class="cta-sub">
+      <span class="icon-svg" style="width:12px;height:12px;color:var(--mp-outline)"><svg xmlns="http://www.w3.org/2000/svg" height="12" viewBox="0 -960 960 960" width="12"><path d="M420-360h120l-23-129q20-10 31.5-29t11.5-42q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 23 11.5 42t31.5 29l-23 129Zm60 280q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Z"/></svg></span>
+      Bảo mật và An toàn là ưu tiên hàng đầu
+    </div>
+  </div>
+
+  <div class="home-indicator"><div class="home-indicator-bar"></div></div>
+
+  <!-- Sticker Bottom Sheet -->
+  <div class="sticker-overlay" id="stickerOverlay" onclick="closeStickerSheet()"></div>
+  <div class="sticker-sheet" id="stickerSheet">
+    <div class="sticker-sheet-handle"></div>
+    <div class="sticker-sheet-header">
+      <span class="sticker-sheet-title">Chọn sticker</span>
+      <button class="sticker-sheet-close" onclick="closeStickerSheet()">
+        <span class="icon-svg" style="width:20px;height:20px;color:var(--mp-on-surface-variant)"><svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg></span>
+      </button>
+    </div>
+
+    <!-- Preview area -->
+    <div class="sticker-preview-area">
+      <div class="sticker-preview-cat" id="sheetPreviewCat"></div>
+      <div class="sticker-preview-text placeholder" id="sheetPreviewText">Chọn mood cho bill này</div>
+    </div>
+
+    <div class="sticker-sheet-desc">Chọn sticker phù hợp với mood hoặc thể loại chi tiêu này</div>
+
+    <!-- Grid of MeowPay cat stickers -->
+    <div class="sticker-grid" id="stickerGrid"></div>
+
+    <button class="sticker-save-btn" id="stickerSaveBtn" onclick="saveStickerChoice()">Lưu</button>
+  </div>
+
+</div>
+
+<script>
+// ─── MeowPay Cat Sticker SVGs ───
+// Each cat: orange body, teal/blue accents, expression varies
+const STICKERS = [
+  {
+    id: 'playful', label: 'Playful',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#F0960F"/>
+      <path d="M14 28L22 14L30 26Z" fill="#F0960F"/>
+      <path d="M16 26L22 16L28 26Z" fill="#3AB4CF"/>
+      <path d="M50 28L58 14L66 26Z" fill="#F0960F"/>
+      <path d="M52 26L58 16L64 26Z" fill="#3AB4CF"/>
+      <text x="26" y="46" font-size="14" font-weight="bold" fill="#1C1B18">›</text>
+      <text x="47" y="46" font-size="14" font-weight="bold" fill="#1C1B18">‹</text>
+      <circle cx="32" cy="40" r="2.5" fill="#1C1B18"/>
+      <circle cx="48" cy="40" r="2.5" fill="#1C1B18"/>
+      <ellipse cx="40" cy="52" rx="5" ry="3" fill="#E8753A"/>
+      <path d="M35 52 Q40 57 45 52" stroke="#1C1B18" stroke-width="1.5" fill="none"/>
+      <line x1="10" y1="42" x2="22" y2="40" stroke="#1C1B18" stroke-width="1.2"/>
+      <line x1="10" y1="48" x2="22" y2="47" stroke="#1C1B18" stroke-width="1.2"/>
+      <line x1="58" y1="40" x2="70" y2="42" stroke="#1C1B18" stroke-width="1.2"/>
+      <line x1="58" y1="47" x2="70" y2="48" stroke="#1C1B18" stroke-width="1.2"/>
+    </svg>`
+  },
+  {
+    id: 'sad', label: 'Sad',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#F0960F"/>
+      <path d="M14 28L22 14L30 26Z" fill="#F0960F"/>
+      <path d="M16 26L22 16L28 26Z" fill="#3AB4CF"/>
+      <path d="M50 28L58 14L66 26Z" fill="#F0960F"/>
+      <path d="M52 26L58 16L64 26Z" fill="#3AB4CF"/>
+      <circle cx="32" cy="40" r="3.5" fill="#1C1B18"/>
+      <circle cx="48" cy="40" r="3.5" fill="#1C1B18"/>
+      <circle cx="33" cy="39" r="1" fill="#fff"/>
+      <circle cx="49" cy="39" r="1" fill="#fff"/>
+      <path d="M33 55 Q40 50 47 55" stroke="#1C1B18" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M25 34 L33 37" stroke="#1C1B18" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M55 34 L47 37" stroke="#1C1B18" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="26" cy="48" rx="4" ry="2.5" fill="#F4C89A" opacity="0.6"/>
+      <ellipse cx="54" cy="48" rx="4" ry="2.5" fill="#F4C89A" opacity="0.6"/>
+    </svg>`
+  },
+  {
+    id: 'angry', label: 'Angry',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#E8613A"/>
+      <path d="M14 28L22 14L30 26Z" fill="#E8613A"/>
+      <path d="M16 26L22 16L28 26Z" fill="#C0392B"/>
+      <path d="M50 28L58 14L66 26Z" fill="#E8613A"/>
+      <path d="M52 26L58 16L64 26Z" fill="#C0392B"/>
+      <circle cx="32" cy="42" r="3.5" fill="#1C1B18"/>
+      <circle cx="48" cy="42" r="3.5" fill="#1C1B18"/>
+      <circle cx="33" cy="41" r="1" fill="#fff"/>
+      <circle cx="49" cy="41" r="1" fill="#fff"/>
+      <path d="M24 34 L36 38" stroke="#1C1B18" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M56 34 L44 38" stroke="#1C1B18" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M33 55 Q40 52 47 55" stroke="#1C1B18" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <line x1="10" y1="44" x2="20" y2="42" stroke="#1C1B18" stroke-width="1.2"/>
+      <line x1="60" y1="42" x2="70" y2="44" stroke="#1C1B18" stroke-width="1.2"/>
+    </svg>`
+  },
+  {
+    id: 'surprise', label: 'Surprise',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#F0960F"/>
+      <path d="M14 28L22 12L30 26Z" fill="#F0960F"/>
+      <path d="M16 26L22 15L28 26Z" fill="#3AB4CF"/>
+      <path d="M50 28L58 12L66 26Z" fill="#F0960F"/>
+      <path d="M52 26L58 15L64 26Z" fill="#3AB4CF"/>
+      <circle cx="32" cy="40" r="5" fill="#fff" stroke="#1C1B18" stroke-width="1.5"/>
+      <circle cx="32" cy="40" r="3" fill="#1C1B18"/>
+      <circle cx="48" cy="40" r="5" fill="#fff" stroke="#1C1B18" stroke-width="1.5"/>
+      <circle cx="48" cy="40" r="3" fill="#1C1B18"/>
+      <ellipse cx="40" cy="55" rx="4" ry="5" fill="#1C1B18"/>
+      <ellipse cx="26" cy="48" rx="4" ry="2.5" fill="#F4C89A" opacity="0.5"/>
+      <ellipse cx="54" cy="48" rx="4" ry="2.5" fill="#F4C89A" opacity="0.5"/>
+    </svg>`
+  },
+  {
+    id: 'shock', label: 'Shock',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#C07ADB"/>
+      <path d="M14 28L22 14L30 26Z" fill="#C07ADB"/>
+      <path d="M16 26L22 16L28 26Z" fill="#9B59B6"/>
+      <path d="M50 28L58 14L66 26Z" fill="#C07ADB"/>
+      <path d="M52 26L58 16L64 26Z" fill="#9B59B6"/>
+      <circle cx="30" cy="38" r="6" fill="#fff" stroke="#1C1B18" stroke-width="1.5"/>
+      <circle cx="30" cy="38" r="3.5" fill="#1C1B18"/>
+      <circle cx="50" cy="38" r="6" fill="#fff" stroke="#1C1B18" stroke-width="1.5"/>
+      <circle cx="50" cy="38" r="3.5" fill="#1C1B18"/>
+      <ellipse cx="40" cy="56" rx="6" ry="7" fill="#1C1B18"/>
+      <ellipse cx="40" cy="55" rx="4" ry="4" fill="#C0392B"/>
+    </svg>`
+  },
+  {
+    id: 'crying', label: 'Crying',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#F0960F"/>
+      <path d="M14 28L22 14L30 26Z" fill="#F0960F"/>
+      <path d="M16 26L22 16L28 26Z" fill="#3AB4CF"/>
+      <path d="M50 28L58 14L66 26Z" fill="#F0960F"/>
+      <path d="M52 26L58 16L64 26Z" fill="#3AB4CF"/>
+      <path d="M26 38 Q32 34 38 38" stroke="#1C1B18" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M42 38 Q48 34 54 38" stroke="#1C1B18" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M33 55 Q40 50 47 55" stroke="#1C1B18" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M28 44 Q26 54 24 58" stroke="#5DADE2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M52 44 Q54 54 56 58" stroke="#5DADE2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="24" cy="60" r="2" fill="#5DADE2" opacity="0.7"/>
+      <circle cx="56" cy="60" r="2" fill="#5DADE2" opacity="0.7"/>
+    </svg>`
+  },
+  {
+    id: 'special', label: 'Special',
+    svg: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="44" r="30" fill="#F0960F"/>
+      <path d="M14 28L22 14L30 26Z" fill="#F0960F"/>
+      <path d="M16 26L22 16L28 26Z" fill="#3AB4CF"/>
+      <path d="M50 28L58 14L66 26Z" fill="#F0960F"/>
+      <path d="M52 26L58 16L64 26Z" fill="#3AB4CF"/>
+      <circle cx="32" cy="40" r="2.5" fill="#1C1B18"/>
+      <circle cx="48" cy="40" r="2.5" fill="#1C1B18"/>
+      <path d="M34 50 Q40 58 46 50" stroke="#1C1B18" stroke-width="2" fill="#E8753A"/>
+      <text x="50" y="30" font-size="10" fill="#FFD700">★</text>
+      <text x="18" y="36" font-size="8" fill="#FFD700">✦</text>
+      <text x="58" y="50" font-size="7" fill="#FFD700">✦</text>
+      <rect x="54" y="58" width="14" height="10" rx="2" fill="#5563C1" opacity="0.8"/>
+      <rect x="58" y="56" width="6" height="3" rx="1" fill="#5563C1" opacity="0.6"/>
+    </svg>`
+  }
+];
+
+let selectedStickerId = null;
+function openNote() {
+  const section = document.getElementById('noteSection');
+  if (section.classList.contains('has-content') || section.classList.contains('editing')) return;
+  section.classList.add('has-content','editing');
+  document.getElementById('noteLabel').textContent = 'Lời nhắn & Sticker';
+  setTimeout(() => document.getElementById('noteTextarea').focus(), 100);
+}
+
+// ─── Sticker Sheet ───
+function openStickerSheet() {
+  document.getElementById('stickerOverlay').classList.add('open');
+  document.getElementById('stickerSheet').classList.add('open');
+  renderStickerGrid();
+  updateSheetPreview();
+}
+function closeStickerSheet() {
+  document.getElementById('stickerOverlay').classList.remove('open');
+  document.getElementById('stickerSheet').classList.remove('open');
+}
+function renderStickerGrid() {
+  const grid = document.getElementById('stickerGrid');
+  grid.innerHTML = '';
+  STICKERS.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'sticker-grid-item' + (selectedStickerId === s.id ? ' selected' : '');
+    item.onclick = () => selectSticker(s.id);
+    item.innerHTML = `${s.svg}<span class="sticker-grid-label">${s.label}</span>`;
+    grid.appendChild(item);
+  });
+}
+function selectSticker(id) {
+  selectedStickerId = selectedStickerId === id ? null : id;
+  renderStickerGrid();
+  updateSheetPreview();
+}
+function updateSheetPreview() {
+  const cat = document.getElementById('sheetPreviewCat');
+  const txt = document.getElementById('sheetPreviewText');
+  if (selectedStickerId) {
+    const s = STICKERS.find(x => x.id === selectedStickerId);
+    cat.innerHTML = s.svg;
+    txt.textContent = s.label;
+    txt.classList.remove('placeholder');
+  } else {
+    cat.innerHTML = '';
+    txt.textContent = 'Chọn mood cho bill này';
+    txt.classList.add('placeholder');
+  }
+}
+function saveStickerChoice() {
+  const preview = document.getElementById('selectedStickerPreview');
+  const trigger = document.getElementById('stickerTrigger');
+  const label = document.getElementById('stickerTriggerLabel');
+  if (selectedStickerId) {
+    const s = STICKERS.find(x => x.id === selectedStickerId);
+    preview.innerHTML = s.svg;
+    preview.classList.add('visible');
+    trigger.classList.add('has-sticker');
+    label.textContent = s.label;
+  } else {
+    preview.innerHTML = '';
+    preview.classList.remove('visible');
+    trigger.classList.remove('has-sticker');
+    label.textContent = 'Chọn sticker';
+  }
+  closeStickerSheet();
+}
+
+function onSplit() {
+  const btn = document.getElementById('ctaBtn');
+  btn.style.background = '#2E7D32';
+  btn.innerHTML = `
+    <span class="icon-svg" style="width:22px;height:22px"><svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 -960 960 960" width="22" fill="currentColor"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg></span>
+    Đã gửi!
+  `;
+  btn.style.boxShadow = '0 2px 12px rgba(46,125,50,0.30)';
+}
+</script>
+
+</body>
+</html>

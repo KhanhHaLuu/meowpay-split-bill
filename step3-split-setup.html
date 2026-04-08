@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MeowPay – Split bill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  .icon-svg{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.icon-svg svg{fill:currentColor}
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+  :root{
+    --mp-primary:#F0960F;--mp-primary-light:#FFEFD6;--mp-primary-dim:rgba(240,150,15,0.35);
+    --mp-secondary:#5563C1;--mp-secondary-container:#E0E2FF;
+    --mp-surface:#FDFBF8;--mp-surface-dim:#F5F2EE;--mp-surface-container:#EFECE8;
+    --mp-on-surface:#1C1B18;--mp-on-surface-variant:#4A4740;
+    --mp-outline:#7C7870;--mp-outline-variant:#CCC7BF;
+    --mp-disabled:#C8C5BE;--mp-disabled-text:#9E9A93;
+    --mp-error:#DC362E;--mp-error-light:#FFEAEA;--mp-error-container:#FFF0F0;
+    --mp-shape-full:9999px;--mp-shape-lg:20px;--mp-shape-md:14px;--mp-shape-sm:10px;
+    --font-display:'Google Sans','Noto Sans',system-ui,sans-serif;
+    --font-body:'Noto Sans','Google Sans',system-ui,sans-serif;
+    --ease-emphasized:cubic-bezier(0.2,0,0,1);--ease-standard:cubic-bezier(0.2,0.0,0,1.0);
+  }
+
+  body{font-family:var(--font-body);background:#F0EDE9;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:24px}
+
+  /* ── Phone ── */
+  .phone-frame{width:393px;height:852px;background:var(--mp-surface);border-radius:44px;overflow:hidden;position:relative;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.06),0 25px 60px -12px rgba(0,0,0,0.18),0 8px 24px -8px rgba(0,0,0,0.10),inset 0 0 0 1.5px rgba(255,255,255,0.5);
+    display:flex;flex-direction:column}
+
+  /* ── Status Bar ── */
+  .status-bar{height:54px;padding:14px 28px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .status-time{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-0.01em;color:var(--mp-on-surface)}
+  .status-icons{display:flex;align-items:center;gap:5px}.status-icons svg{height:12px;fill:var(--mp-on-surface)}
+
+  /* ── Nav ── */
+  .nav-bar{height:56px;padding:0 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative}
+  .nav-back{width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:none;background:transparent;cursor:pointer;transition:background .2s var(--ease-standard)}
+  .nav-back:hover{background:rgba(0,0,0,0.05)}
+  .nav-title{font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:-0.01em;color:var(--mp-on-surface);position:absolute;left:50%;transform:translateX(-50%)}
+  .nav-spacer{width:48px}
+
+  /* ── Steps ── */
+  .step-indicator{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0 0;flex-shrink:0}
+  .step-dot{width:28px;height:4px;border-radius:2px;background:var(--mp-outline-variant);transition:all .4s var(--ease-emphasized)}
+  .step-dot.active{background:var(--mp-primary)}.step-dot.done{background:var(--mp-primary-dim)}
+
+  /* ── Content ── */
+  .content{flex:1;overflow-y:auto;padding:20px 24px 0;display:flex;flex-direction:column;gap:0}
+  .content::-webkit-scrollbar{width:0}
+
+  /* ── Paid-by row ── */
+  .paid-by-row{display:flex;align-items:center;gap:6px;margin-bottom:20px;cursor:pointer}
+  .paid-by-label{font-size:13px;color:var(--mp-outline);font-weight:500}
+  .paid-by-value{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--mp-primary)}
+
+  /* ── Bill Card ── */
+  .bill-card{
+    background:var(--mp-surface-dim);border:1.5px solid var(--mp-outline-variant);border-radius:var(--mp-shape-md);
+    padding:16px 20px;display:flex;align-items:center;gap:14px;margin-bottom:24px;
+  }
+  .bill-icon{
+    width:44px;height:44px;border-radius:12px;
+    background:linear-gradient(135deg,var(--mp-primary),#E8A04C);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .bill-info{flex:1;min-width:0}
+  .bill-name{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--mp-on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bill-sub{font-size:12px;color:var(--mp-outline);margin-top:2px}
+  .bill-amount{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--mp-on-surface);letter-spacing:-0.02em;flex-shrink:0}
+
+  /* ── Split Header ── */
+  .split-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .split-title{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--mp-on-surface)}
+  .split-count{color:var(--mp-outline);font-weight:500}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;background:var(--mp-surface-container);border-radius:var(--mp-shape-full);padding:3px;margin-bottom:20px;position:relative}
+  .tab{
+    flex:1;height:38px;border:none;background:transparent;border-radius:var(--mp-shape-full);
+    font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--mp-outline);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:all .3s var(--ease-emphasized);position:relative;z-index:1;
+  }
+  .tab.active{color:var(--mp-on-surface);background:var(--mp-surface);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+
+  /* ── Member list ── */
+  .member-list{display:flex;flex-direction:column;gap:2px}
+
+  .member-row{
+    display:flex;align-items:center;gap:14px;padding:14px 4px;
+    border-radius:var(--mp-shape-sm);transition:background .15s ease;
+  }
+  .member-avatar{
+    width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:15px;color:#fff;flex-shrink:0;
+  }
+  .member-info{flex:1;min-width:0}
+  .member-name{font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--mp-on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .member-role{font-size:12px;margin-top:1px;font-weight:500}
+  .member-role.owed{color:var(--mp-primary)}
+  .member-role.pays{color:var(--mp-outline)}
+
+  /* Editable amount */
+  .member-amount{
+    font-family:var(--font-display);font-size:17px;font-weight:600;color:var(--mp-on-surface);
+    text-decoration:underline;text-decoration-color:var(--mp-outline-variant);
+    text-underline-offset:4px;text-decoration-thickness:1.5px;
+    cursor:pointer;flex-shrink:0;border:none;background:transparent;outline:none;
+    width:90px;text-align:right;padding:4px 0;
+    transition:all .2s var(--ease-standard);caret-color:var(--mp-primary);
+  }
+  .member-amount:focus{
+    text-decoration-color:var(--mp-primary);
+    color:var(--mp-primary);
+  }
+  .member-amount.error-val{
+    color:var(--mp-error)!important;
+    text-decoration-color:var(--mp-error)!important;
+  }
+
+  /* ── Remainder Bar ── */
+  .remainder-bar{
+    margin-top:16px;padding:12px 16px;border-radius:var(--mp-shape-sm);
+    display:flex;align-items:center;gap:10px;
+    transition:all .3s var(--ease-standard);
+  }
+  .remainder-bar.ok{background:var(--mp-primary-light)}
+  .remainder-bar.error{background:var(--mp-error-container);border:1.5px solid rgba(220,54,46,0.2)}
+  .remainder-text{font-size:13px;font-weight:600;flex:1}
+  .remainder-bar.ok .remainder-text{color:var(--mp-on-surface-variant)}
+  .remainder-bar.error .remainder-text{color:var(--mp-error)}
+  .remainder-bar.hidden{opacity:0;height:0;padding:0;margin:0;overflow:hidden}
+
+  /* ── Bottom ── */
+  .bottom-section{flex-shrink:0;padding:16px 24px 0;display:flex;flex-direction:column}
+  .cta-btn{
+    width:100%;height:56px;border:none;border-radius:var(--mp-shape-md);
+    font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:0.01em;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:all .35s var(--ease-emphasized);position:relative;overflow:hidden;
+  }
+  .cta-btn.disabled{background:var(--mp-surface-container);color:var(--mp-disabled-text);pointer-events:none}
+  .cta-btn.enabled{background:var(--mp-primary);color:#fff;box-shadow:0 2px 12px rgba(240,150,15,0.30)}
+  .cta-btn.enabled:hover{box-shadow:0 4px 20px rgba(240,150,15,0.40);transform:translateY(-1px)}
+  .cta-btn.enabled:active{transform:scale(0.985);box-shadow:0 1px 8px rgba(240,150,15,0.25)}
+
+  .home-indicator{height:34px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;flex-shrink:0}
+  .home-indicator-bar{width:134px;height:5px;background:var(--mp-on-surface);border-radius:3px;opacity:0.18}
+
+  /* ── Bottom Sheet Overlay ── */
+  .overlay{
+    position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:10;
+    opacity:0;pointer-events:none;transition:opacity .3s var(--ease-standard);
+    border-radius:44px;
+  }
+  .overlay.open{opacity:1;pointer-events:auto}
+
+  .bottom-sheet{
+    position:absolute;bottom:0;left:0;right:0;z-index:11;
+    background:var(--mp-surface);border-radius:24px 24px 44px 44px;
+    padding:16px 24px 40px;
+    transform:translateY(100%);transition:transform .4s var(--ease-emphasized);
+  }
+  .bottom-sheet.open{transform:translateY(0)}
+  .sheet-handle{width:40px;height:4px;background:var(--mp-outline-variant);border-radius:2px;margin:0 auto 20px}
+  .sheet-title{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--mp-on-surface);margin-bottom:16px}
+  .sheet-item{
+    display:flex;align-items:center;gap:14px;padding:14px 4px;border-radius:var(--mp-shape-sm);
+    cursor:pointer;transition:background .15s ease;
+  }
+  .sheet-item:hover{background:rgba(0,0,0,0.03)}
+  .sheet-item.active-payer .sheet-item-name{color:var(--mp-primary);font-weight:600}
+  .sheet-item-avatar{
+    width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:15px;color:#fff;flex-shrink:0;
+  }
+  .sheet-item-name{font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--mp-on-surface);flex:1}
+  .sheet-check{width:22px;height:22px;display:none}
+  .sheet-item.active-payer .sheet-check{display:flex}
+
+  /* ── Numpad (synced with Step 1) ── */
+  .numpad-tray{
+    flex-shrink:0;padding:0 24px;
+    max-height:0;overflow:hidden;opacity:0;
+    transition:max-height .35s var(--ease-emphasized),opacity .25s var(--ease-standard),padding .35s var(--ease-emphasized);
+  }
+  .numpad-tray.open{max-height:300px;opacity:1;padding:8px 24px 0}
+
+  .numpad-editing-label{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 4px 6px;
+  }
+  .numpad-editing-name{font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--mp-primary);letter-spacing:0.03em;text-transform:uppercase}
+  .numpad-done{
+    border:none;background:var(--mp-primary-light);color:var(--mp-primary);
+    font-family:var(--font-display);font-size:13px;font-weight:600;
+    padding:6px 16px;border-radius:var(--mp-shape-full);cursor:pointer;
+    transition:background .15s ease;
+  }
+  .numpad-done:hover{background:var(--mp-primary-dim)}
+
+  .numpad{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
+  }
+  .numpad-key{
+    height:48px;border:none;background:transparent;border-radius:var(--mp-shape-sm);
+    font-family:var(--font-display);font-size:24px;font-weight:500;color:var(--mp-on-surface);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease;user-select:none;-webkit-user-select:none;
+  }
+  .numpad-key:hover{background:rgba(0,0,0,0.04)}
+  .numpad-key:active{background:rgba(0,0,0,0.08)}
+  .numpad-key.comma{font-size:28px;font-weight:600}
+  .numpad-key.zero{font-size:24px}
+
+  /* ── Active member highlight ── */
+  .member-row.editing{background:var(--mp-primary-light);margin:0 -4px;padding:14px 8px;border-radius:var(--mp-shape-sm)}
+  .member-row.editing .member-amount{color:var(--mp-primary);text-decoration-color:var(--mp-primary)}
+
+  /* ── Animations ── */
+  @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .anim-slide-up{animation:slideUp .5s var(--ease-emphasized) both}
+  .anim-fade{animation:fadeIn .4s var(--ease-standard) both}
+  .delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}.delay-3{animation-delay:.24s}.delay-4{animation-delay:.36s}
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- Status Bar -->
+  <div class="status-bar anim-fade">
+    <span class="status-time">16:41</span>
+    <div class="status-icons">
+      <svg viewBox="0 0 18 12" width="18"><path d="M1 4.2C3.7 1.5 7.1 0 10.7 0s7 1.5 9.7 4.2l-1.4 1.4C16.7 3.3 13.8 2 10.7 2S4.7 3.3 2.4 5.6L1 4.2z" transform="scale(0.85)"/><path d="M5 8.2c1.6-1.6 3.6-2.4 5.7-2.4s4.1.8 5.7 2.4l-1.4 1.4c-1.2-1.2-2.7-1.8-4.3-1.8s-3.1.6-4.3 1.8L5 8.2z" transform="scale(0.85)"/><circle cx="9.1" cy="11" r="1.5"/></svg>
+      <svg viewBox="0 0 24 12" width="26" height="13"><rect x="0" y="1" width="22" height="11" rx="2.5" ry="2.5" stroke="currentColor" stroke-width="1" fill="none" opacity="0.35"/><rect x="22.5" y="4.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.35"/><rect x="1.5" y="2.5" width="16" height="8" rx="1.5" fill="#3BCC5E"/></svg>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-bar anim-slide-up delay-1">
+    <button class="nav-back" aria-label="Back">
+      <span class="icon-svg" style="width:24px;height:24px;color:var(--mp-on-surface)"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M400-80 0-480l400-400 56 57-343 343 343 343-56 57Z"/></svg></span>
+    </button>
+    <span class="nav-title">Split bill</span>
+    <div class="nav-spacer"></div>
+  </div>
+
+  <!-- Steps -->
+  <div class="step-indicator anim-fade delay-2">
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="content anim-fade delay-3">
+
+    <!-- Paid by -->
+    <div class="paid-by-row" onclick="openSheet()">
+      <span class="paid-by-label">Paid by</span>
+      <span class="paid-by-value" id="paidByName">You</span>
+      <span class="icon-svg" style="width:16px;height:16px;color:var(--mp-primary)"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></span>
+    </div>
+
+    <!-- Bill Card -->
+    <div class="bill-card">
+      <div class="bill-icon">
+        <span class="icon-svg" style="width:24px;height:24px;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-17 6-31.5t18-25.5l56-56q11-11 25.5-17t31.5-6h424q17 0 31.5 6t25.5 17l56 56q12 11 18 25.5t6 31.5v640q0 33-23.5 56.5T760-80H240Zm0-80h480v-640H240v640Zm80-80h320v-80H320v80Zm0-160h320v-80H320v80Zm0-160h320v-80H320v80Z"/></svg></span>
+      </div>
+      <div class="bill-info">
+        <div class="bill-name">Ăn tối nhóm</div>
+        <div class="bill-sub">You paid</div>
+      </div>
+      <div class="bill-amount" id="billTotal">185.000đ</div>
+    </div>
+
+    <!-- Split Header -->
+    <div class="split-header">
+      <div class="split-title">Split among · <span class="split-count" id="splitCount">3</span></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" id="tabBar">
+      <button class="tab active" data-mode="amount" onclick="switchTab('amount')">
+        <span class="icon-svg" style="width:16px;height:16px"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M560-440q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM280-320q-33 0-56.5-23.5T200-400v-320q0-33 23.5-56.5T280-800h560q33 0 56.5 23.5T920-720v320q0 33-23.5 56.5T840-320H280Z"/></svg></span>
+        Amount
+      </button>
+      <button class="tab" data-mode="percent" onclick="switchTab('percent')">
+        <span class="icon-svg" style="width:16px;height:16px"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M300-520q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T360-660q0-25-17.5-42.5T300-720q-25 0-42.5 17.5T240-660q0 25 17.5 42.5T300-600Zm360 440q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T720-300q0-25-17.5-42.5T660-360q-25 0-42.5 17.5T600-300q0 25 17.5 42.5T660-240Zm-444 80-56-56 504-504 56 56-504 504Z"/></svg></span>
+        Percent
+      </button>
+    </div>
+
+    <!-- Member List -->
+    <div class="member-list" id="memberList">
+      <!-- JS-rendered -->
+    </div>
+
+    <!-- Remainder -->
+    <div class="remainder-bar hidden" id="remainderBar">
+      <span class="icon-svg" style="width:18px;height:18px" id="remainderIcon"></span>
+      <span class="remainder-text" id="remainderText"></span>
+    </div>
+
+    <div style="height:12px"></div>
+  </div>
+
+  <!-- Numpad tray -->
+  <div class="numpad-tray" id="numpadTray">
+    <div class="numpad-editing-label">
+      <span class="numpad-editing-name" id="numpadLabel">—</span>
+      <button class="numpad-done" onclick="closeNumpad()">Xong</button>
+    </div>
+    <div class="numpad">
+      <button class="numpad-key" onclick="numpadInput('1')">1</button>
+      <button class="numpad-key" onclick="numpadInput('2')">2</button>
+      <button class="numpad-key" onclick="numpadInput('3')">3</button>
+      <button class="numpad-key" onclick="numpadInput('4')">4</button>
+      <button class="numpad-key" onclick="numpadInput('5')">5</button>
+      <button class="numpad-key" onclick="numpadInput('6')">6</button>
+      <button class="numpad-key" onclick="numpadInput('7')">7</button>
+      <button class="numpad-key" onclick="numpadInput('8')">8</button>
+      <button class="numpad-key" onclick="numpadInput('9')">9</button>
+      <button class="numpad-key comma" onclick="numpadInput(',')">,</button>
+      <button class="numpad-key zero" onclick="numpadInput('0')">0</button>
+      <button class="numpad-key" onclick="numpadDelete()">
+        <span class="icon-svg" style="width:24px;height:24px;color:var(--mp-on-surface-variant)"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M360-200q-22 0-40-11.5T289-240L120-480l169-240q13-17 31-28.5t40-11.5h420q33 0 56.5 23.5T860-680v400q0 33-23.5 56.5T780-200H360Zm420-80v-400 400ZM360-280h420v-400H360L218-480l142 200Zm64-72 96-96 96 96 56-56-96-96 96-96-56-56-96 96-96-96-56 56 96 96-96 96 56 56Z"/></svg></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom CTA -->
+  <div class="bottom-section">
+    <button class="cta-btn enabled" id="ctaBtn">
+      <span id="ctaLabel">Tiếp theo</span>
+      <span class="icon-svg" style="width:20px;height:20px"><svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z"/></svg></span>
+    </button>
+  </div>
+
+  <div class="home-indicator"><div class="home-indicator-bar"></div></div>
+
+  <!-- Bottom Sheet: Paid By -->
+  <div class="overlay" id="overlay" onclick="closeSheet()"></div>
+  <div class="bottom-sheet" id="bottomSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Ai đã trả tiền?</div>
+    <div id="sheetList"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── Data ───
+const TOTAL = 185000;
+const members = [
+  { id:'you',  name:'You',          initials:'Y',  color:'#F0960F', isPayer:true },
+  { id:'ma',   name:'Minh Anh',     initials:'MA', color:'#E8A04C', isPayer:false },
+  { id:'dn',   name:'Dustin Nguyen',initials:'DN', color:'#5563C1', isPayer:false },
+];
+
+let mode = 'amount'; // 'amount' | 'percent'
+let payerId = 'you';
+let splits = {};    // id → raw number
+let activeEditId = null;  // which member is being edited
+let editBuffer = '';      // raw string typed via numpad
+
+// ─── Init ───
+function initSplits() {
+  const perPerson = Math.floor(TOTAL / members.length);
+  const remainder = TOTAL - perPerson * members.length;
+  members.forEach((m, i) => {
+    splits[m.id] = mode === 'amount'
+      ? (i === 0 ? perPerson + remainder : perPerson)
+      : parseFloat((100 / members.length).toFixed(2));
+  });
+}
+initSplits();
+
+// ─── Format helpers ───
+function fmtVND(n) {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function formatDisplay(val) {
+  return mode === 'amount' ? fmtVND(Math.round(val)) + 'đ' : val.toFixed(1) + '%';
+}
+function formatBuffer(buf) {
+  if (!buf) return mode === 'amount' ? '0đ' : '0%';
+  if (mode === 'amount') {
+    const parts = buf.split(',');
+    let intPart = parts[0].replace(/^0+(?=\d)/, '') || '0';
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return parts.length > 1 ? intPart + ',' + parts[1].substring(0,2) + 'đ' : intPart + 'đ';
+  } else {
+    return buf + '%';
+  }
+}
+
+// ─── Render members ───
+function renderMembers() {
+  const list = document.getElementById('memberList');
+  list.innerHTML = '';
+  members.forEach(m => {
+    const val = splits[m.id];
+    const display = formatDisplay(val);
+    const role = m.id === payerId ? 'Paid share' : "You're owed";
+    const roleClass = m.id === payerId ? 'pays' : 'owed';
+    const isEditing = m.id === activeEditId;
+    const row = document.createElement('div');
+    row.className = 'member-row' + (isEditing ? ' editing' : '');
+    row.innerHTML = `
+      <div class="member-avatar" style="background:${m.color}">${m.initials}</div>
+      <div class="member-info">
+        <div class="member-name">${m.name}</div>
+        <div class="member-role ${roleClass}">${role}</div>
+      </div>
+      <div class="member-amount${isEditing ? '' : ''}" data-id="${m.id}"
+        onclick="openNumpadFor('${m.id}')">${isEditing ? formatBuffer(editBuffer) : display}</div>
+    `;
+    list.appendChild(row);
+  });
+  validate();
+}
+
+// ─── Numpad open/close ───
+function openNumpadFor(id) {
+  activeEditId = id;
+  const raw = splits[id];
+  editBuffer = mode === 'amount' ? Math.round(raw).toString() : raw.toFixed(1).replace('.', ',');
+  // If it's the equal split default, start fresh
+  if (editBuffer === '0') editBuffer = '';
+
+  const m = members.find(x => x.id === id);
+  document.getElementById('numpadLabel').textContent = m.name;
+  document.getElementById('numpadTray').classList.add('open');
+  renderMembers(); // re-render to highlight active row
+}
+
+function closeNumpad() {
+  if (activeEditId) {
+    // Commit buffer to splits
+    let raw = parseFloat(editBuffer.replace(',', '.'));
+    if (isNaN(raw) || raw < 0) raw = 0;
+    if (mode === 'percent' && raw > 100) raw = 100;
+    if (mode === 'amount' && raw > TOTAL * 2) raw = TOTAL;
+    splits[activeEditId] = raw;
+  }
+  activeEditId = null;
+  editBuffer = '';
+  document.getElementById('numpadTray').classList.remove('open');
+  renderMembers();
+}
+
+// ─── Numpad input ───
+function numpadInput(char) {
+  if (!activeEditId) return;
+  // Comma rules
+  if (char === ',') {
+    if (editBuffer.includes(',')) return;
+    if (editBuffer === '') editBuffer = '0';
+  }
+  // Length guards
+  if (char !== ',') {
+    const parts = editBuffer.split(',');
+    if (mode === 'amount' && parts.length === 1 && parts[0].length >= 9) return;
+    if (parts.length === 2 && parts[1].length >= (mode === 'amount' ? 0 : 1)) return;
+    // For amount mode, no decimals
+    if (mode === 'amount' && editBuffer.includes(',')) return;
+  }
+
+  editBuffer += char;
+
+  // Live update splits for real-time validation
+  let raw = parseFloat(editBuffer.replace(',', '.'));
+  if (!isNaN(raw)) splits[activeEditId] = raw;
+
+  renderMembers();
+
+  // Key press feedback
+  event.currentTarget.style.transform = 'scale(0.92)';
+  setTimeout(() => { if(event.currentTarget) event.currentTarget.style.transform = ''; }, 100);
+}
+
+function numpadDelete() {
+  if (!activeEditId || editBuffer.length === 0) return;
+  editBuffer = editBuffer.slice(0, -1);
+
+  let raw = parseFloat(editBuffer.replace(',', '.'));
+  if (isNaN(raw)) raw = 0;
+  splits[activeEditId] = raw;
+
+  renderMembers();
+}
+
+// Close numpad when tapping outside (on content area)
+document.addEventListener('click', (e) => {
+  if (!activeEditId) return;
+  const tray = document.getElementById('numpadTray');
+  const memberList = document.getElementById('memberList');
+  if (!tray.contains(e.target) && !memberList.contains(e.target)) {
+    closeNumpad();
+  }
+});
+
+// ─── Validate totals ───
+function validate() {
+  const sum = Object.values(splits).reduce((a, b) => a + b, 0);
+  const target = mode === 'amount' ? TOTAL : 100;
+  const diff = sum - target;
+  const isOk = Math.abs(diff) < (mode === 'amount' ? 1 : 0.1);
+
+  const bar = document.getElementById('remainderBar');
+  const txt = document.getElementById('remainderText');
+  const ico = document.getElementById('remainderIcon');
+  const cta = document.getElementById('ctaBtn');
+
+  // Mark error amounts
+  document.querySelectorAll('.member-amount').forEach(el => el.classList.remove('error-val'));
+
+  if (isOk) {
+    bar.className = 'remainder-bar ok';
+    ico.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="#4A4740"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>';
+    txt.textContent = mode === 'amount'
+      ? `Tổng: ${fmtVND(TOTAL)}đ — Khớp ✓`
+      : `Tổng: 100% — Khớp ✓`;
+    cta.classList.remove('disabled');
+    cta.classList.add('enabled');
+  } else {
+    bar.className = 'remainder-bar error';
+    ico.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="#DC362E"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>';
+    const diffStr = mode === 'amount'
+      ? (diff > 0 ? `+${fmtVND(Math.round(diff))}đ dư` : `${fmtVND(Math.abs(Math.round(diff)))}đ thiếu`)
+      : (diff > 0 ? `+${diff.toFixed(1)}% dư` : `${Math.abs(diff).toFixed(1)}% thiếu`);
+    txt.textContent = `Tổng không khớp — ${diffStr}`;
+    cta.classList.remove('enabled');
+    cta.classList.add('disabled');
+    // highlight all amounts red
+    document.querySelectorAll('.member-amount').forEach(el => el.classList.add('error-val'));
+  }
+}
+
+// ─── Tab switch ───
+function switchTab(newMode) {
+  closeNumpad();
+  mode = newMode;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  initSplits();
+  renderMembers();
+}
+
+// ─── Paid-by sheet ───
+function openSheet() {
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('bottomSheet').classList.add('open');
+  renderSheet();
+}
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('bottomSheet').classList.remove('open');
+}
+function renderSheet() {
+  const list = document.getElementById('sheetList');
+  list.innerHTML = '';
+  members.forEach(m => {
+    const isActive = m.id === payerId;
+    const item = document.createElement('div');
+    item.className = 'sheet-item' + (isActive ? ' active-payer' : '');
+    item.onclick = () => selectPayer(m.id);
+    item.innerHTML = `
+      <div class="sheet-item-avatar" style="background:${m.color}">${m.initials}</div>
+      <span class="sheet-item-name">${m.name}</span>
+      <span class="sheet-check icon-svg" style="width:22px;height:22px;color:var(--mp-primary)"><svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 -960 960 960" width="22"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg></span>
+    `;
+    list.appendChild(item);
+  });
+}
+function selectPayer(id) {
+  payerId = id;
+  const m = members.find(x => x.id === id);
+  document.getElementById('paidByName').textContent = m.name;
+  closeSheet();
+  renderMembers();
+}
+
+// ─── Boot ───
+renderMembers();
+</script>
+
+</body>
+</html>

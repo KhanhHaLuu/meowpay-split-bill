@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MeowPay – Create a Bill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<style>
+  /* ─── Inline SVG icon fallback ─── */
+  .icon-svg { display: inline-flex; align-items: center; justify-content: center; }
+  .icon-svg svg { fill: currentColor; }
+  /* ─── Reset ─── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  /* ─── Design Tokens (MeowPay palette) ─── */
+  :root {
+    --mp-primary: #F0960F;
+    --mp-primary-light: #FFEFD6;
+    --mp-primary-dim: rgba(240, 150, 15, 0.35);
+    --mp-secondary: #5563C1;
+    --mp-secondary-container: #E0E2FF;
+    --mp-surface: #FDFBF8;
+    --mp-surface-dim: #F5F2EE;
+    --mp-surface-container: #EFECE8;
+    --mp-on-surface: #1C1B18;
+    --mp-on-surface-variant: #4A4740;
+    --mp-outline: #7C7870;
+    --mp-outline-variant: #CCC7BF;
+    --mp-disabled: #C8C5BE;
+    --mp-disabled-text: #9E9A93;
+    --mp-error: #DC362E;
+    --mp-shape-full: 9999px;
+    --mp-shape-lg: 20px;
+    --mp-shape-md: 14px;
+    --mp-shape-sm: 10px;
+    --font-display: 'Google Sans', 'Noto Sans', system-ui, sans-serif;
+    --font-body: 'Noto Sans', 'Google Sans', system-ui, sans-serif;
+    --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --ease-standard: cubic-bezier(0.2, 0.0, 0, 1.0);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: #F0EDE9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  /* ─── Phone Frame ─── */
+  .phone-frame {
+    width: 393px;
+    height: 852px;
+    background: var(--mp-surface);
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 25px 60px -12px rgba(0,0,0,0.18),
+      0 8px 24px -8px rgba(0,0,0,0.10),
+      inset 0 0 0 1.5px rgba(255,255,255,0.5);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── Status Bar ─── */
+  .status-bar {
+    height: 54px;
+    padding: 14px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .status-time {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    color: var(--mp-on-surface);
+  }
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-icons svg { height: 12px; fill: var(--mp-on-surface); }
+
+  /* ─── Navigation Bar ─── */
+  .nav-bar {
+    height: 56px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .nav-back {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.2s var(--ease-standard);
+  }
+  .nav-back:hover { background: rgba(0,0,0,0.05); }
+  .nav-back .material-symbols-outlined {
+    font-size: 24px;
+    color: var(--mp-on-surface);
+  }
+  .nav-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    color: var(--mp-on-surface);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .nav-spacer { width: 48px; }
+
+  /* ─── Step Indicator ─── */
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0 0;
+    flex-shrink: 0;
+  }
+  .step-dot {
+    width: 28px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--mp-outline-variant);
+    transition: all 0.4s var(--ease-emphasized);
+  }
+  .step-dot.active {
+    background: var(--mp-primary);
+    width: 28px;
+  }
+  .step-dot.done {
+    background: var(--mp-primary-dim);
+  }
+
+  /* ─── Content Area ─── */
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 32px;
+    gap: 0;
+    position: relative;
+    margin-top: -40px;
+  }
+
+  /* ─── Input Fields ─── */
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .field {
+    position: relative;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mp-outline);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .field-label .material-symbols-outlined {
+    font-size: 16px;
+    color: var(--mp-outline);
+  }
+
+  /* --- Expense Name Field --- */
+  .input-expense {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--mp-on-surface);
+    padding: 12px 0;
+    border-bottom: 2px solid var(--mp-outline-variant);
+    transition: border-color 0.3s var(--ease-standard);
+    caret-color: var(--mp-primary);
+  }
+  .input-expense::placeholder {
+    color: var(--mp-disabled-text);
+    font-weight: 400;
+  }
+  .input-expense:focus {
+    border-bottom-color: var(--mp-primary);
+  }
+
+  /* --- Amount Field --- */
+  .amount-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--mp-outline-variant);
+    transition: border-color 0.3s var(--ease-standard);
+  }
+  .amount-row.focused {
+    border-bottom-color: var(--mp-primary);
+  }
+
+  .amount-value {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--mp-on-surface);
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0;
+    min-width: 0;
+    caret-color: var(--mp-primary);
+    line-height: 1.1;
+  }
+  .amount-value::placeholder {
+    color: var(--mp-disabled);
+    font-weight: 500;
+  }
+
+  .currency-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    background: var(--mp-surface-dim);
+    border: 1.5px solid var(--mp-outline-variant);
+    border-radius: var(--mp-shape-full);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+    transition: all 0.2s var(--ease-standard);
+    user-select: none;
+  }
+  .currency-chip:hover {
+    background: var(--mp-surface-container);
+    border-color: var(--mp-outline);
+  }
+  .currency-chip-label {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--mp-on-surface-variant);
+    letter-spacing: 0.01em;
+  }
+  .currency-chip .material-symbols-outlined {
+    font-size: 16px;
+    color: var(--mp-outline);
+  }
+
+  /* ─── Floating Help Hint ─── */
+  .hint-text {
+    text-align: center;
+    font-size: 13px;
+    color: var(--mp-outline);
+    opacity: 0;
+    transition: opacity 0.4s var(--ease-standard);
+    pointer-events: none;
+    padding: 16px 0 0;
+  }
+  .hint-text.visible {
+    opacity: 1;
+  }
+
+  /* ─── Bottom Section ─── */
+  .bottom-section {
+    flex-shrink: 0;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── CTA Button ─── */
+  .cta-btn {
+    width: 100%;
+    height: 56px;
+    border: none;
+    border-radius: var(--mp-shape-md);
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.35s var(--ease-emphasized);
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-btn.disabled {
+    background: var(--mp-surface-container);
+    color: var(--mp-disabled-text);
+    pointer-events: none;
+  }
+  .cta-btn.enabled {
+    background: var(--mp-primary);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(240, 150, 15, 0.30);
+  }
+  .cta-btn.enabled:hover {
+    box-shadow: 0 4px 20px rgba(240, 150, 15, 0.40);
+    transform: translateY(-1px);
+  }
+  .cta-btn.enabled:active {
+    transform: scale(0.985);
+    box-shadow: 0 1px 8px rgba(240, 150, 15, 0.25);
+  }
+  .cta-btn .material-symbols-outlined {
+    font-size: 20px;
+    transition: transform 0.3s var(--ease-emphasized);
+  }
+  .cta-btn.enabled .material-symbols-outlined {
+    transform: translateX(2px);
+  }
+
+  /* ─── Custom Numpad ─── */
+  .numpad {
+    padding: 6px 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+  }
+  .numpad-key {
+    height: 50px;
+    border: none;
+    background: transparent;
+    border-radius: var(--mp-shape-sm);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--mp-on-surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .numpad-key:hover { background: rgba(0,0,0,0.04); }
+  .numpad-key:active { background: rgba(0,0,0,0.08); }
+  .numpad-key.comma { font-size: 28px; font-weight: 600; }
+  .numpad-key.delete .material-symbols-outlined { font-size: 24px; color: var(--mp-on-surface-variant); }
+  .numpad-key.zero { font-size: 24px; }
+
+  .numpad + .cta-btn {
+    margin-top: 10px;
+  }
+
+  /* ─── Home Indicator ─── */
+  .home-indicator {
+    height: 34px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    flex-shrink: 0;
+  }
+  .home-indicator-bar {
+    width: 134px;
+    height: 5px;
+    background: var(--mp-on-surface);
+    border-radius: 3px;
+    opacity: 0.18;
+  }
+
+  /* ─── Animations ─── */
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-slide-up {
+    animation: slideUp 0.5s var(--ease-emphasized) both;
+  }
+  .anim-fade {
+    animation: fadeIn 0.4s var(--ease-standard) both;
+  }
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.36s; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- Status Bar -->
+  <div class="status-bar anim-fade">
+    <span class="status-time">16:41</span>
+    <div class="status-icons">
+      <svg viewBox="0 0 18 12" width="18"><path d="M1 4.2C3.7 1.5 7.1 0 10.7 0s7 1.5 9.7 4.2l-1.4 1.4C16.7 3.3 13.8 2 10.7 2S4.7 3.3 2.4 5.6L1 4.2z" transform="scale(0.85)"/><path d="M5 8.2c1.6-1.6 3.6-2.4 5.7-2.4s4.1.8 5.7 2.4l-1.4 1.4c-1.2-1.2-2.7-1.8-4.3-1.8s-3.1.6-4.3 1.8L5 8.2z" transform="scale(0.85)"/><circle cx="9.1" cy="11" r="1.5"/></svg>
+      <svg viewBox="0 0 24 12" width="26" height="13"><rect x="0" y="1" width="22" height="11" rx="2.5" ry="2.5" stroke="currentColor" stroke-width="1" fill="none" opacity="0.35"/><rect x="22.5" y="4.5" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.35"/><rect x="1.5" y="2.5" width="16" height="8" rx="1.5" fill="#3BCC5E"/></svg>
+    </div>
+  </div>
+
+  <!-- Nav Bar -->
+  <div class="nav-bar anim-slide-up delay-1" style="position:relative;">
+    <button class="nav-back" aria-label="Back">
+      <span class="icon-svg" style="width:24px;height:24px;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M400-80 0-480l400-400 56 57-343 343 343 343-56 57Z"/></svg></span>
+    </button>
+    <span class="nav-title">Create a bill</span>
+    <div class="nav-spacer"></div>
+  </div>
+
+  <!-- Step Progress -->
+  <div class="step-indicator anim-fade delay-2">
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="field-group anim-slide-up delay-2">
+
+      <!-- Expense Name -->
+      <div class="field">
+        <div class="field-label">
+          <span class="icon-svg" style="width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-17 6-31.5t18-25.5l56-56q11-11 25.5-17t31.5-6h424q17 0 31.5 6t25.5 17l56 56q12 11 18 25.5t6 31.5v640q0 33-23.5 56.5T760-80H240Zm0-80h480v-640H240v640Zm80-80h320v-80H320v80Zm0-160h320v-80H320v80Zm0-160h320v-80H320v80Z"/></svg></span>
+          Tên khoản chi
+        </div>
+        <input
+          type="text"
+          class="input-expense"
+          id="expenseName"
+          placeholder="VD: Ăn tối, Grab, Karaoke..."
+          autocomplete="off"
+          spellcheck="false"
+        >
+      </div>
+
+      <!-- Amount -->
+      <div class="field">
+        <div class="field-label">
+          <span class="icon-svg" style="width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M560-440q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM280-320q-33 0-56.5-23.5T200-400v-320q0-33 23.5-56.5T280-800h560q33 0 56.5 23.5T920-720v320q0 33-23.5 56.5T840-320H280Zm80-80h400q0-33 23.5-56.5T840-480v-160q-33 0-56.5-23.5T760-720H360q0 33-23.5 56.5T280-640v160q33 0 56.5 23.5T360-400ZM120-160q-33 0-56.5-23.5T40-240v-440h80v440h600v80H120Z"/></svg></span>
+          Số tiền
+        </div>
+        <div class="amount-row" id="amountRow">
+          <input
+            type="text"
+            class="amount-value"
+            id="amountValue"
+            placeholder="0"
+            readonly
+            inputmode="none"
+          >
+          <div class="currency-chip" id="currencyChip">
+            <span class="currency-chip-label">đ</span>
+            <span class="icon-svg" style="width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom-section">
+    <div class="hint-text" id="hintText">Nhập đầy đủ thông tin để tiếp tục</div>
+    <!-- Numpad -->
+    <div class="numpad anim-fade delay-4">
+      <button class="numpad-key" data-val="1">1</button>
+      <button class="numpad-key" data-val="2">2</button>
+      <button class="numpad-key" data-val="3">3</button>
+      <button class="numpad-key" data-val="4">4</button>
+      <button class="numpad-key" data-val="5">5</button>
+      <button class="numpad-key" data-val="6">6</button>
+      <button class="numpad-key" data-val="7">7</button>
+      <button class="numpad-key" data-val="8">8</button>
+      <button class="numpad-key" data-val="9">9</button>
+      <button class="numpad-key comma" data-val=",">,</button>
+      <button class="numpad-key zero" data-val="0">0</button>
+      <button class="numpad-key delete" id="deleteKey">
+        <span class="icon-svg" style="width:24px;height:24px;color:var(--mp-on-surface-variant);"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M360-200q-22 0-40-11.5T289-240L120-480l169-240q13-17 31-28.5t40-11.5h420q33 0 56.5 23.5T860-680v400q0 33-23.5 56.5T780-200H360Zm420-80v-400 400ZM360-280h420v-400H360L218-480l142 200Zm64-72 96-96 96 96 56-56-96-96 96-96-56-56-96 96-96-96-56 56 96 96-96 96 56 56Z"/></svg></span>
+      </button>
+    </div>
+
+    <!-- CTA pinned to bottom -->
+    <button class="cta-btn disabled anim-slide-up delay-3" id="ctaBtn">
+      Tiếp theo
+      <span class="icon-svg" style="width:20px;height:20px;"><svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z"/></svg></span>
+    </button>
+  </div>
+
+  <div class="home-indicator">
+    <div class="home-indicator-bar"></div>
+  </div>
+
+</div>
+
+<script>
+  // ─── State ───
+  let rawAmount = '';
+  const expenseInput = document.getElementById('expenseName');
+  const amountInput  = document.getElementById('amountValue');
+  const amountRow    = document.getElementById('amountRow');
+  const ctaBtn       = document.getElementById('ctaBtn');
+  const hintText     = document.getElementById('hintText');
+
+  // ─── Format number with dot thousands (Vietnamese style) ───
+  function formatVND(str) {
+    if (!str) return '';
+    // Split by comma (decimal separator)
+    const parts = str.split(',');
+    let intPart = parts[0].replace(/^0+(?=\d)/, ''); // strip leading zeros
+    if (!intPart) intPart = '0';
+    // Add thousand separators (dots)
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (parts.length > 1) {
+      return intPart + ',' + parts[1].substring(0, 2);
+    }
+    return intPart;
+  }
+
+  // ─── Update CTA State ───
+  function updateCTA() {
+    const hasName   = expenseInput.value.trim().length > 0;
+    const hasAmount = rawAmount.length > 0 && rawAmount !== '0' && rawAmount !== '0,';
+
+    if (hasName && hasAmount) {
+      ctaBtn.classList.remove('disabled');
+      ctaBtn.classList.add('enabled');
+      hintText.classList.remove('visible');
+    } else {
+      ctaBtn.classList.remove('enabled');
+      ctaBtn.classList.add('disabled');
+      // Show hint only if user has interacted
+      if (expenseInput.value.length > 0 || rawAmount.length > 0) {
+        hintText.classList.add('visible');
+      }
+    }
+  }
+
+  // ─── Expense Name Input ───
+  expenseInput.addEventListener('input', updateCTA);
+  expenseInput.addEventListener('focus', () => {
+    amountRow.classList.remove('focused');
+  });
+
+  // ─── Amount Input Focus ───
+  amountInput.addEventListener('focus', () => {
+    amountRow.classList.add('focused');
+  });
+  amountInput.addEventListener('click', () => {
+    amountRow.classList.add('focused');
+    expenseInput.blur();
+  });
+
+  // ─── Numpad Logic ───
+  document.querySelectorAll('.numpad-key:not(#deleteKey)').forEach(key => {
+    key.addEventListener('click', () => {
+      const val = key.dataset.val;
+
+      // Focus amount row visually
+      amountRow.classList.add('focused');
+      expenseInput.blur();
+
+      // Comma rules
+      if (val === ',') {
+        if (rawAmount.includes(',')) return; // only one comma
+        if (rawAmount === '') { rawAmount = '0'; }
+      }
+
+      // Max length guard (before comma: 12 digits, after comma: 2 digits)
+      if (val !== ',') {
+        const parts = rawAmount.split(',');
+        if (parts.length === 1 && parts[0].length >= 12) return;
+        if (parts.length === 2 && parts[1].length >= 2) return;
+      }
+
+      rawAmount += val;
+      amountInput.value = formatVND(rawAmount);
+      updateCTA();
+
+      // Subtle scale feedback
+      key.style.transform = 'scale(0.92)';
+      setTimeout(() => key.style.transform = '', 100);
+    });
+  });
+
+  // ─── Delete ───
+  document.getElementById('deleteKey').addEventListener('click', () => {
+    if (rawAmount.length > 0) {
+      rawAmount = rawAmount.slice(0, -1);
+      amountInput.value = formatVND(rawAmount);
+      updateCTA();
+    }
+    const dk = document.getElementById('deleteKey');
+    dk.style.transform = 'scale(0.92)';
+    setTimeout(() => dk.style.transform = '', 100);
+  });
+
+  // Long-press delete to clear all
+  let deleteTimer;
+  document.getElementById('deleteKey').addEventListener('mousedown', () => {
+    deleteTimer = setTimeout(() => {
+      rawAmount = '';
+      amountInput.value = '';
+      updateCTA();
+    }, 500);
+  });
+  document.getElementById('deleteKey').addEventListener('mouseup', () => clearTimeout(deleteTimer));
+  document.getElementById('deleteKey').addEventListener('mouseleave', () => clearTimeout(deleteTimer));
+
+  // ─── Init: show hint after a beat ───
+  setTimeout(() => {
+    hintText.classList.add('visible');
+  }, 1200);
+</script>
+
+</body>
+</html>
